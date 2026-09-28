@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <string.h> //para poder manejar el txt
+#include <time.h>
 
 struct actividad{
 
@@ -10,7 +11,7 @@ struct actividad{
     char nombre[50]; //nombre actividad
     int tiempo; //ms de la actividad, 100 a 5000ms si no esta asignado
     int dependencias_contador; //contador de dependencias
-    int* dependencias; //arreglo dinamico para las dependencias
+    char dependencias[20][10]; //arreglo bidimensional para guardar los IDs de las dependencias
     int estado; // estado de la actividad. pendiente = 0, corriendo = 1, finalizado = 2, error = -1
 
 };
@@ -51,36 +52,22 @@ int obtener_linea(char* linea, struct actividad *acti){ //usamos int para verifi
 
     }
 
-    //inicializar dependencias_contador y dependencias
-
+    //inicializar dependencias_contador
     acti->dependencias_contador = 0;
-    acti->dependencias = NULL; //en NULL para evitar redimencionamiento a una dirección invalida
 
     if (resto != NULL) {
-
-        resto++; //saltamos el 3er: para que resto apunte a las dependencias
+        resto++; //saltamos el 3er : para que resto apunte a las dependencias
 
         char *fragmento = strtok(resto, ", \n");
 
         while(fragmento != NULL){ //Sera NULL cuando no hayan mas dependencias
 
-            //vamos agrandando el arreglo de dependencias
-            int *temp = realloc( acti->dependencias, sizeof(int) * (acti->dependencias_contador + 1));
-
-            if (temp == NULL) { //en caso de que se acabe la memoria
-
-                perror("realloc");
-                exit(EXIT_FAILURE);
-
-            }
-
-            acti->dependencias = temp; //nuevo tamaño para las dependencias
-            acti->dependencias[acti->dependencias_contador] = atoi(fragmento); //guardamos la dependencia
-            acti->dependencias_contador++; //aumentamos en 1 la cantidad de dependencias de la tareaa
+            // Copiamos el ID de la dependencia directamente a la matriz
+            strcpy(acti->dependencias[acti->dependencias_contador], fragmento);
+            acti->dependencias_contador++; //aumentamos en 1 la cantidad de dependencias
 
             fragmento = strtok(NULL, ", \n"); //siguiente fragmento
         }
-
     }
     return 0; 
 }
