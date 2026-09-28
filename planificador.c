@@ -73,6 +73,26 @@ int obtener_linea(char* linea, struct actividad *acti){ //usamos int para verifi
 }
 
 // Función que verifica si todas las dependencias de una tarea están en estado 2 (Finalizadas)
+int dependencias_finalizadas(struct actividad *tarea, struct actividad tareas[], int total_tareas) {
+    for (int i = 0; i < tarea->dependencias_contador; i++) {
+        char *id_tarea = tarea->dependencias[i];
+        int estado_dependencia = 0;
+
+        // Buscamos la dependencia (tarea) en el arreglo de tareas
+        for (int j = 0; j < total_tareas; j++) {
+            if (strcmp(tareas[j].ID, id_tarea) == 0) {
+                estado_dependencia = tareas[j].estado;//id de la tarea encontrada
+                break;
+            }
+        }
+        
+        // Si encontramos una sola dependencia que no está terminada (estado 2), retornamos 0 (falso)
+        if (estado_dependencia != 2) {
+            return 0; 
+        }
+    }
+    return 1; // Todas las dependencias están finalizadas (o no tiene dependencias)
+}
 
 
 int main(int argc, char* argv[]){
