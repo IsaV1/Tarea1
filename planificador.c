@@ -52,8 +52,9 @@ int obtener_linea(char* linea, struct actividad *acti){ //usamos int para verifi
 
     }
 
-    //inicializar dependencias_contador
+    //inicializar dependencias_contador y estado
     acti->dependencias_contador = 0;
+    acti->estado = 0;
 
     if (resto != NULL) {
         resto++; //saltamos el 3er : para que resto apunte a las dependencias
@@ -61,6 +62,13 @@ int obtener_linea(char* linea, struct actividad *acti){ //usamos int para verifi
         char *fragmento = strtok(resto, ", \n");
 
         while(fragmento != NULL){ //Sera NULL cuando no hayan mas dependencias
+
+            if(acti -> dependencias_contador >= 20){ //Para evitar salirnos de la matriz dependencias
+
+                printf("Desborde de dependencias permitidas\n");
+                return -1;
+
+            }
 
             // Copiamos el ID de la dependencia directamente a la matriz
             strcpy(acti->dependencias[acti->dependencias_contador], fragmento);
@@ -94,6 +102,24 @@ int dependencias_finalizadas(struct actividad *tarea, struct actividad tareas[],
     return 1; // Todas las dependencias están finalizadas (o no tiene dependencias)
 }
 
+int siguiente_tarea_lista(struct actividad tareas[] , int total_tareas){
+
+    for(int i = 0; i<total_tareas; i++){
+
+        //una tarea estara lista para ejecutar cuando este en estado 0 y sus dependencias finalizadas (estado 2)
+
+        if(tareas[i].estado == 0 && dependencias_finalizadas(&tareas[i], tareas, total_tareas)){
+
+            return i;
+            //Retorna la tarea que cumpla la condición para ser ejecutada.
+
+        }
+
+    }
+
+    return -1; //No se encontro tarea que cumpla la condición
+
+}
 
 int main(int argc, char* argv[]){
 
@@ -114,13 +140,13 @@ int main(int argc, char* argv[]){
 
     if (!archivo) {
 
-        perror("El archivo no existe\n");
+        perror("Error al abrir archivo\n");
         return 1;
 
     }
 
-    char linea[256]; //bytes
-    struct actividad tareas[10000]; // Arreglo para guardar las actividades del DAG
+    char linea[512]; //bytes
+    static struct actividad tareas[10000]; // Arreglo para guardar las actividades del DAG, static en caso de que agrandandemos la matriz
     int total_tareas = 0;
 
     while (fgets(linea, sizeof(linea), archivo) != NULL) { //leer cada linea del archivo
@@ -146,6 +172,21 @@ int main(int argc, char* argv[]){
         printf("\n");
     }
     
+    //INICIO BLOQUE DE PRUEBA
+
+    int indice_tarea;
+
+    while( (indice_tarea = siguiente_tarea_lista(tareas, total_tareas) ) != -1 ){
+
+        printf("Ejecutando la tarea ID: %s Con nombre: %s\n", tareas[indice_tarea].ID, tareas[indice_tarea].nombre);
+        tareas[indice_tarea].estado = 2;
+
+    }
+
+    //FIN BLOQUE DE PRUEBA
+
+
+
     // for(int i = 0; i <k-1 ; i++){
 
     //     pid_t pid = fork();
