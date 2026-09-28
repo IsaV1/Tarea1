@@ -72,6 +72,7 @@ int obtener_linea(char* linea, struct actividad *acti){ //usamos int para verifi
     return 0; 
 }
 
+// Función que verifica si todas las dependencias de una tarea están en estado 2 (Finalizadas)
 
 
 int main(int argc, char* argv[]){
