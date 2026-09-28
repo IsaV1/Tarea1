@@ -85,11 +85,11 @@ int main(int argc, char* argv[]){
     }
     
     
-    int k = atoi(argv[2]); //Cantidad maxima de procesos a tener
+    //int k = atoi(argv[2]); //Cantidad maxima de procesos a tener
 
     char *nombre_archivo = argv[1];
 
-    FILE *archivo = fopen(nombre_archivo, "r");//abrir archivo con nombre existente
+    FILE *archivo = fopen(nombre_archivo, "r");//abrir archivo con nombre existente, "r" es para solo lectura (read)
 
     if (!archivo) {
 
@@ -99,27 +99,32 @@ int main(int argc, char* argv[]){
     }
 
     char linea[256]; //bytes
+    struct actividad tareas[10000]; // Arreglo para guardar las actividades del DAG
+    int total_tareas = 0;
 
     while (fgets(linea, sizeof(linea), archivo) != NULL) { //leer cada linea del archivo
+        // Ignorar líneas vacías o saltos de línea sueltos
+        if (strlen(linea) <= 1) continue;
 
-        printf("%s", linea);
-
+        // Llamamos a la función de obtener linea
+        if (obtener_linea(linea, &tareas[total_tareas]) == 0) {
+            total_tareas++;
+        }
     }
 
     fclose(archivo);//cerrar el archivo
 
+    //se imprime las tareas para verificar que funciona bien la lectura con las dependencias correspondientes
+    printf("\nTotal tareas: %d\n", total_tareas);
+    for (int i = 0; i < total_tareas; i++) {
+        printf("ID: %s | Nombre: %s | Tiempo: %d ms | Dependencias: ", 
+               tareas[i].ID, tareas[i].nombre, tareas[i].tiempo);
+        for (int j = 0; j < tareas[i].dependencias_contador; j++) {
+            printf("[%s] ", tareas[i].dependencias[j]);
+        }
+        printf("\n");
+    }
     
-    
-    
-    
-    
-    
-    
-    
-
-
-
-
     // for(int i = 0; i <k-1 ; i++){
 
     //     pid_t pid = fork();
