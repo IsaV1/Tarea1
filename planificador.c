@@ -140,7 +140,7 @@ int buscar_pid_tarea(pid_t pid, struct actividad tareas[], int total_tareas){
     return -1; //en caso de no encontrar una tarea con el pid de los parametros puestos en la función, pero no deberia ocurrir
 }
 
-int ejecutar_tarea(struct actividad *tarea){
+int ejecutar_tarea(struct actividad *tarea, int write_fd){
 
     pid_t pid = fork();
 
@@ -158,6 +158,10 @@ int ejecutar_tarea(struct actividad *tarea){
         pausa.tv_sec = tarea->tiempo / 1000; // pasamos los ms a segundos  
         pausa.tv_nsec = (tarea->tiempo % 1000) * 1000000L; //obtenemos el resto de los segundos y lo pasamos a nanosec, L para variable long
         nanosleep(&pausa, NULL); //segundo parametro en NULL, ya que no nos interesa saber cuando le faltaba en caso de una señal
+
+        // paso de mensajes (pipe): Enviamos el ID de la tarea al padre al finalizar
+        write(write_fd, tarea->ID, strlen(tarea->ID) + 1);
+
         _exit(0); //_exit y no exit, para evitar que se dupliquen los buffer de salida que heredo del proceso padre
 
     }
@@ -245,10 +249,10 @@ int main(int argc, char* argv[]){
     int total_tareas = 0;
 
     while (fgets(linea, sizeof(linea), archivo) != NULL) { //leer cada linea del archivo
-        // Ignorar líneas vacías o saltos de línea sueltos
+        //ignorar líneas vacías o saltos de línea sueltos
         if (strlen(linea) <= 1) continue;
 
-        // Llamamos a la función de obtener linea
+        //llamamos a la función de obtener linea
         if (obtener_linea(linea, &tareas[total_tareas]) == 0) {
             total_tareas++;
         }
@@ -286,10 +290,15 @@ int main(int argc, char* argv[]){
     }
 
     //FIN BLOQUE PRUEBA
-
     int hijos_activos = 0;
     int tareas_completadas = 0;
 
+    int pipe_fd[2];
+    if (pipe(pipe_fd) == -1) {
+        perror("Error al crear el pipe");
+        return 1;
+    }
+    
     while(tareas_completadas< total_tareas){
 
         //vamos creando procesos hasta un limite de K procesos
@@ -304,13 +313,18 @@ int main(int argc, char* argv[]){
 
             }
             //tarea lista para ejecutarse
-            ejecutar_tarea(&tareas[indice_tarea]);
+            ejecutar_tarea(&tareas[indice_tarea], pipe_fd[1]);
             hijos_activos++; //incrementamos la cantidad de hijos activos ejecutandose a la vez
 
         }
 
         //esperamos a que algun proceso hijo termine su ejecucion
 
+        char id_terminado[10];
+        //el padre lee el mensaje enviado por el hijo a través del pipe
+        read(pipe_fd[0], id_terminado, sizeof(id_terminado));
+
+        //esperamos al proceso hijo para evitar zombies
         int estado;
         pid_t proceso_terminado = waitpid(-1, &estado, 0);
 
