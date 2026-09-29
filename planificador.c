@@ -5,6 +5,7 @@
 #include <sys/wait.h>
 #include <string.h> //para poder manejar el txt
 #include <time.h> //para el rand
+#include <signal.h> //necesario para manejar señales
 
 struct actividad{
 
@@ -153,6 +154,10 @@ int ejecutar_tarea(struct actividad *tarea, int write_fd){
 
     if(pid==0){ //proceso hijo
 
+        //reestablece la señal, el hijo vuelve al comportamiento por defecto
+        //SIGINT mata sin ejecutar la función de alerta del padre
+        signal(SIGINT, SIG_DFL);
+
         struct timespec pausa; //debemos usar un struct timespect, ya que nanosleep lo recibe como parametro y sleep() solo funciona en segundos
 
         pausa.tv_sec = tarea->tiempo / 1000; // pasamos los ms a segundos  
@@ -219,6 +224,25 @@ void crear_dependientes(struct actividad tareas[], int total_tareas){
 
 }
 
+struct actividad *tareas_global = NULL;//puntero o referencia global al arreglo de tareas
+int total_tareas_global = 0;
+
+//función que se ejecuta al presionar ctrl+c - inspección de la seremi
+void manejar_ctrl_c(int sig) {
+    (void)sig; //evita el warning de variable no usada
+    printf("\n[ALERTA] ¡Llegó la Seremi (SIGINT)! Abortando actividades...\n");
+    if (tareas_global != NULL) {
+        for (int i = 0; i < total_tareas_global; i++) {
+            //si la tarea estaba corriendo (estado 1), matamos su proceso hijo
+            if (tareas_global[i].estado == 1 && tareas_global[i].pid > 0) {
+                kill(tareas_global[i].pid, SIGKILL);
+            }
+        }
+    }
+    printf("Planificador finalizado por la autoridad.\n");
+    exit(0);
+}
+
 
 int main(int argc, char* argv[]){
 
@@ -245,8 +269,12 @@ int main(int argc, char* argv[]){
     }
 
     char linea[512]; //bytes
-    static struct actividad tareas[10000]; // Arreglo para guardar las actividades del DAG, static en caso de que agrandandemos la matriz
+    static struct actividad tareas[10000]; //arreglo para guardar las actividades del DAG, static en caso de que agrandandemos la matriz
+    tareas_global = tareas; //se asignan las referencias globales
+    total_tareas_global = 0;
     int total_tareas = 0;
+
+    signal(SIGINT, manejar_ctrl_c);//registramos la interrupción de ctrl+c, con la llamada de la función
 
     while (fgets(linea, sizeof(linea), archivo) != NULL) { //leer cada linea del archivo
         //ignorar líneas vacías o saltos de línea sueltos
@@ -279,7 +307,6 @@ int main(int argc, char* argv[]){
 
         printf("La tarea: %s tiene %d dependientes", tareas[i].ID, tareas[i].dependientes_contador);
 
-        for(int j=0; i< tareas[i].dependientes_contador; j++){
         for(int j=0; j< tareas[i].dependientes_contador; j++){
 
             int id = tareas[i].dependientes[j];
