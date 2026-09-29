@@ -280,6 +280,7 @@ int main(int argc, char* argv[]){
         printf("La tarea: %s tiene %d dependientes", tareas[i].ID, tareas[i].dependientes_contador);
 
         for(int j=0; i< tareas[i].dependientes_contador; j++){
+        for(int j=0; j< tareas[i].dependientes_contador; j++){
 
             int id = tareas[i].dependientes[j];
             printf("[%s] ", tareas[id].ID);
