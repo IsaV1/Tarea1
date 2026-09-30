@@ -289,6 +289,7 @@ int main(int argc, char* argv[]){
     fclose(archivo);//cerrar el archivo
 
     //se imprime las tareas para verificar que funciona bien la lectura con las dependencias correspondientes
+    /*
     printf("\nTotal tareas: %d\n", total_tareas);
     for (int i = 0; i < total_tareas; i++) {
         printf("ID: %s | Nombre: %s | Tiempo: %d ms | Dependencias: ", 
@@ -298,11 +299,13 @@ int main(int argc, char* argv[]){
         }
         printf("\n");
     }
+    */
 
     crear_dependientes(tareas, total_tareas); //añadimos los dependientes de cada tarea
 
     //BLOQUE DE PRUEBA PARA VER QUE SE AÑADA BIEN LOS DEPENDIENTES DE CADA TAREA
 
+    /*
     for(int i =0; i< total_tareas; i++){
 
         printf("La tarea: %s tiene %d dependientes", tareas[i].ID, tareas[i].dependientes_contador);
@@ -316,6 +319,7 @@ int main(int argc, char* argv[]){
         printf("\n");
 
     }
+    */
 
     //FIN BLOQUE PRUEBA
     int hijos_activos = 0;
